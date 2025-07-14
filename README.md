@@ -1,0 +1,1 @@
+I'm a simple tool. Point me at an AWS account and I'll try to enumerate things that are external. Used mainly during gigs to get a list of assets in scope to be used to verify anything discovered during external testing.
