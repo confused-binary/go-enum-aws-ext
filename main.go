@@ -203,7 +203,7 @@ func runProfileEnumeration(ctx context.Context, profile string, noProgress bool,
 				defer wg.Done()
 				regionCfg := cfg.Copy()
 				regionCfg.Region = region
-				enumerateResources(ctx, regionCfg, profile, accountID, region, resourceChan, bar, &barMutex, servicesToCheck, writer, delay, rateMutex)
+				enumerateResources(ctx, regionCfg, profile, accountID, region, resourceChan, bar, &barMutex, servicesToCheck, delay, rateMutex)
 			}(*region.RegionName)
 		}
 		wg.Wait()
@@ -213,7 +213,7 @@ func runProfileEnumeration(ctx context.Context, profile string, noProgress bool,
 	masterWg.Add(1)
 	go func() {
 		defer masterWg.Done()
-		enumerateGlobalResources(ctx, cfg, profile, accountID, resourceChan, bar, &barMutex, servicesToCheck, writer, delay, rateMutex)
+		enumerateGlobalResources(ctx, cfg, profile, accountID, resourceChan, bar, &barMutex, servicesToCheck, delay, rateMutex)
 	}()
 
 	// Close channel when all enumeration is done
@@ -287,7 +287,7 @@ func retryOnThrottle(fn func() error) error {
 	return lastErr
 }
 
-func enumerateResources(ctx context.Context, cfg aws.Config, profile, accountID, region string, resourceChan chan<- Resource, bar *progressbar.ProgressBar, barMutex *sync.Mutex, servicesToCheck map[string]bool, writer *csv.Writer, delay time.Duration, rateMutex *sync.Mutex) {
+func enumerateResources(ctx context.Context, cfg aws.Config, profile, accountID, region string, resourceChan chan<- Resource, bar *progressbar.ProgressBar, barMutex *sync.Mutex, servicesToCheck map[string]bool, delay time.Duration, rateMutex *sync.Mutex) {
 	// Create region-specific config
 	regionCfg := cfg.Copy()
 	regionCfg.Region = region
@@ -300,7 +300,7 @@ func enumerateResources(ctx context.Context, cfg aws.Config, profile, accountID,
 			bar.Describe(fmt.Sprintf("Enumerating EC2 instances in %s", region))
 			barMutex.Unlock()
 		}
-		enumerateEC2Instances(ctx, ec2Client, profile, accountID, region, resourceChan, writer, delay, rateMutex, bar)
+		enumerateEC2Instances(ctx, ec2Client, profile, accountID, region, resourceChan, delay, rateMutex, bar)
 		if bar != nil {
 			barMutex.Lock()
 			bar.Add(1)
@@ -315,7 +315,7 @@ func enumerateResources(ctx context.Context, cfg aws.Config, profile, accountID,
 			bar.Describe(fmt.Sprintf("Enumerating Elastic IPs in %s", region))
 			barMutex.Unlock()
 		}
-		enumerateElasticIPs(ctx, ec2Client, profile, accountID, region, resourceChan, writer, delay, rateMutex, bar)
+		enumerateElasticIPs(ctx, ec2Client, profile, accountID, region, resourceChan, delay, rateMutex, bar)
 		if bar != nil {
 			barMutex.Lock()
 			bar.Add(1)
@@ -331,7 +331,7 @@ func enumerateResources(ctx context.Context, cfg aws.Config, profile, accountID,
 			barMutex.Unlock()
 		}
 		elbClient := elasticloadbalancing.NewFromConfig(regionCfg)
-		enumerateClassicLoadBalancers(ctx, elbClient, profile, accountID, region, resourceChan, writer, delay, rateMutex, bar)
+		enumerateClassicLoadBalancers(ctx, elbClient, profile, accountID, region, resourceChan, delay, rateMutex, bar)
 		if bar != nil {
 			barMutex.Lock()
 			bar.Add(1)
@@ -347,7 +347,7 @@ func enumerateResources(ctx context.Context, cfg aws.Config, profile, accountID,
 			barMutex.Unlock()
 		}
 		elbv2Client := elbv2.NewFromConfig(regionCfg)
-		enumerateApplicationLoadBalancers(ctx, elbv2Client, profile, accountID, region, resourceChan, writer, delay, rateMutex, bar)
+		enumerateApplicationLoadBalancers(ctx, elbv2Client, profile, accountID, region, resourceChan, delay, rateMutex, bar)
 		if bar != nil {
 			barMutex.Lock()
 			bar.Add(1)
@@ -363,7 +363,7 @@ func enumerateResources(ctx context.Context, cfg aws.Config, profile, accountID,
 			barMutex.Unlock()
 		}
 		apiGatewayClient := apigateway.NewFromConfig(regionCfg)
-		enumerateAPIGateways(ctx, apiGatewayClient, profile, accountID, region, resourceChan, writer, delay, rateMutex, bar)
+		enumerateAPIGateways(ctx, apiGatewayClient, profile, accountID, region, resourceChan, delay, rateMutex, bar)
 		if bar != nil {
 			barMutex.Lock()
 			bar.Add(1)
@@ -379,7 +379,7 @@ func enumerateResources(ctx context.Context, cfg aws.Config, profile, accountID,
 			barMutex.Unlock()
 		}
 		route53Client := route53.NewFromConfig(regionCfg)
-		enumerateRoute53HostedZones(ctx, route53Client, profile, accountID, region, resourceChan, writer, delay, rateMutex, bar)
+		enumerateRoute53HostedZones(ctx, route53Client, profile, accountID, region, resourceChan, delay, rateMutex, bar)
 		if bar != nil {
 			barMutex.Lock()
 			bar.Add(1)
@@ -395,7 +395,7 @@ func enumerateResources(ctx context.Context, cfg aws.Config, profile, accountID,
 			barMutex.Unlock()
 		}
 		lambdaClient := lambda.NewFromConfig(regionCfg)
-		enumerateLambdaFunctions(ctx, lambdaClient, profile, accountID, region, resourceChan, writer, delay, rateMutex, bar)
+		enumerateLambdaFunctions(ctx, lambdaClient, profile, accountID, region, resourceChan, delay, rateMutex, bar)
 		if bar != nil {
 			barMutex.Lock()
 			bar.Add(1)
@@ -411,7 +411,7 @@ func enumerateResources(ctx context.Context, cfg aws.Config, profile, accountID,
 			barMutex.Unlock()
 		}
 		sqsClient := sqs.NewFromConfig(regionCfg)
-		enumerateSQSQueues(ctx, sqsClient, profile, accountID, region, resourceChan, writer, delay, rateMutex, bar)
+		enumerateSQSQueues(ctx, sqsClient, profile, accountID, region, resourceChan, delay, rateMutex, bar)
 		if bar != nil {
 			barMutex.Lock()
 			bar.Add(1)
@@ -427,7 +427,7 @@ func enumerateResources(ctx context.Context, cfg aws.Config, profile, accountID,
 			barMutex.Unlock()
 		}
 		snsClient := sns.NewFromConfig(regionCfg)
-		enumerateSNSTopics(ctx, snsClient, profile, accountID, region, resourceChan, writer, delay, rateMutex, bar)
+		enumerateSNSTopics(ctx, snsClient, profile, accountID, region, resourceChan, delay, rateMutex, bar)
 		if bar != nil {
 			barMutex.Lock()
 			bar.Add(1)
@@ -443,7 +443,7 @@ func enumerateResources(ctx context.Context, cfg aws.Config, profile, accountID,
 			barMutex.Unlock()
 		}
 		rdsClient := rds.NewFromConfig(regionCfg)
-		enumerateRDSInstances(ctx, rdsClient, profile, accountID, region, resourceChan, writer, delay, rateMutex, bar)
+		enumerateRDSInstances(ctx, rdsClient, profile, accountID, region, resourceChan, delay, rateMutex, bar)
 		if bar != nil {
 			barMutex.Lock()
 			bar.Add(1)
@@ -453,7 +453,7 @@ func enumerateResources(ctx context.Context, cfg aws.Config, profile, accountID,
 }
 
 // EC2 Instances
-func enumerateEC2Instances(ctx context.Context, client *ec2.Client, profile, accountID, region string, resourceChan chan<- Resource, writer *csv.Writer, delay time.Duration, rateMutex *sync.Mutex, bar *progressbar.ProgressBar) {
+func enumerateEC2Instances(ctx context.Context, client *ec2.Client, profile, accountID, region string, resourceChan chan<- Resource, delay time.Duration, rateMutex *sync.Mutex, bar *progressbar.ProgressBar) {
 	if delay > 0 {
 		rateMutex.Lock()
 		time.Sleep(delay)
@@ -488,7 +488,7 @@ func enumerateEC2Instances(ctx context.Context, client *ec2.Client, profile, acc
 }
 
 // Elastic IPs
-func enumerateElasticIPs(ctx context.Context, client *ec2.Client, profile, accountID, region string, resourceChan chan<- Resource, writer *csv.Writer, delay time.Duration, rateMutex *sync.Mutex, bar *progressbar.ProgressBar) {
+func enumerateElasticIPs(ctx context.Context, client *ec2.Client, profile, accountID, region string, resourceChan chan<- Resource, delay time.Duration, rateMutex *sync.Mutex, bar *progressbar.ProgressBar) {
 	if delay > 0 {
 		rateMutex.Lock()
 		time.Sleep(delay)
@@ -517,7 +517,7 @@ func enumerateElasticIPs(ctx context.Context, client *ec2.Client, profile, accou
 }
 
 // Classic Load Balancers
-func enumerateClassicLoadBalancers(ctx context.Context, client *elasticloadbalancing.Client, profile, accountID, region string, resourceChan chan<- Resource, writer *csv.Writer, delay time.Duration, rateMutex *sync.Mutex, bar *progressbar.ProgressBar) {
+func enumerateClassicLoadBalancers(ctx context.Context, client *elasticloadbalancing.Client, profile, accountID, region string, resourceChan chan<- Resource, delay time.Duration, rateMutex *sync.Mutex, bar *progressbar.ProgressBar) {
 	if delay > 0 {
 		rateMutex.Lock()
 		time.Sleep(delay)
@@ -546,7 +546,7 @@ func enumerateClassicLoadBalancers(ctx context.Context, client *elasticloadbalan
 }
 
 // Application Load Balancers
-func enumerateApplicationLoadBalancers(ctx context.Context, client *elbv2.Client, profile, accountID, region string, resourceChan chan<- Resource, writer *csv.Writer, delay time.Duration, rateMutex *sync.Mutex, bar *progressbar.ProgressBar) {
+func enumerateApplicationLoadBalancers(ctx context.Context, client *elbv2.Client, profile, accountID, region string, resourceChan chan<- Resource, delay time.Duration, rateMutex *sync.Mutex, bar *progressbar.ProgressBar) {
 	if delay > 0 {
 		rateMutex.Lock()
 		time.Sleep(delay)
@@ -577,7 +577,7 @@ func enumerateApplicationLoadBalancers(ctx context.Context, client *elbv2.Client
 					continue
 				}
 				for _, rule := range ruleResp.Rules {
-					rules = append(rules, fmt.Sprintf("Rule: Priority=%s, Actions=%v, Conditions=%v", aws.ToString(rule.Priority), rule.Actions, rule.Conditions))
+					rules = append(rules, fmt.Sprintf("Rule: Priority=%s, Actions=%s, Conditions=%s", aws.ToString(rule.Priority), formatALBActions(rule.Actions), formatALBConditions(rule.Conditions)))
 				}
 			}
 			details := fmt.Sprintf("DNS=%s, Rules=[%s]", aws.ToString(lb.DNSName), strings.Join(rules, "; "))
@@ -594,7 +594,7 @@ func enumerateApplicationLoadBalancers(ctx context.Context, client *elbv2.Client
 }
 
 // API Gateways
-func enumerateAPIGateways(ctx context.Context, client *apigateway.Client, profile, accountID, region string, resourceChan chan<- Resource, writer *csv.Writer, delay time.Duration, rateMutex *sync.Mutex, bar *progressbar.ProgressBar) {
+func enumerateAPIGateways(ctx context.Context, client *apigateway.Client, profile, accountID, region string, resourceChan chan<- Resource, delay time.Duration, rateMutex *sync.Mutex, bar *progressbar.ProgressBar) {
 	if delay > 0 {
 		rateMutex.Lock()
 		time.Sleep(delay)
@@ -638,7 +638,7 @@ func enumerateAPIGateways(ctx context.Context, client *apigateway.Client, profil
 }
 
 // Route53 Hosted Zones
-func enumerateRoute53HostedZones(ctx context.Context, client *route53.Client, profile, accountID, region string, resourceChan chan<- Resource, writer *csv.Writer, delay time.Duration, rateMutex *sync.Mutex, bar *progressbar.ProgressBar) {
+func enumerateRoute53HostedZones(ctx context.Context, client *route53.Client, profile, accountID, region string, resourceChan chan<- Resource, delay time.Duration, rateMutex *sync.Mutex, bar *progressbar.ProgressBar) {
 	if delay > 0 {
 		rateMutex.Lock()
 		time.Sleep(delay)
@@ -681,7 +681,7 @@ func enumerateRoute53HostedZones(ctx context.Context, client *route53.Client, pr
 }
 
 // Lambda Functions
-func enumerateLambdaFunctions(ctx context.Context, client *lambda.Client, profile, accountID, region string, resourceChan chan<- Resource, writer *csv.Writer, delay time.Duration, rateMutex *sync.Mutex, bar *progressbar.ProgressBar) {
+func enumerateLambdaFunctions(ctx context.Context, client *lambda.Client, profile, accountID, region string, resourceChan chan<- Resource, delay time.Duration, rateMutex *sync.Mutex, bar *progressbar.ProgressBar) {
 	if delay > 0 {
 		rateMutex.Lock()
 		time.Sleep(delay)
@@ -723,7 +723,7 @@ func enumerateLambdaFunctions(ctx context.Context, client *lambda.Client, profil
 }
 
 // SQS Queues
-func enumerateSQSQueues(ctx context.Context, client *sqs.Client, profile, accountID, region string, resourceChan chan<- Resource, writer *csv.Writer, delay time.Duration, rateMutex *sync.Mutex, bar *progressbar.ProgressBar) {
+func enumerateSQSQueues(ctx context.Context, client *sqs.Client, profile, accountID, region string, resourceChan chan<- Resource, delay time.Duration, rateMutex *sync.Mutex, bar *progressbar.ProgressBar) {
 	if delay > 0 {
 		rateMutex.Lock()
 		time.Sleep(delay)
@@ -772,7 +772,7 @@ func enumerateSQSQueues(ctx context.Context, client *sqs.Client, profile, accoun
 }
 
 // SNS Topics
-func enumerateSNSTopics(ctx context.Context, client *sns.Client, profile, accountID, region string, resourceChan chan<- Resource, writer *csv.Writer, delay time.Duration, rateMutex *sync.Mutex, bar *progressbar.ProgressBar) {
+func enumerateSNSTopics(ctx context.Context, client *sns.Client, profile, accountID, region string, resourceChan chan<- Resource, delay time.Duration, rateMutex *sync.Mutex, bar *progressbar.ProgressBar) {
 	if delay > 0 {
 		rateMutex.Lock()
 		time.Sleep(delay)
@@ -811,7 +811,7 @@ func enumerateSNSTopics(ctx context.Context, client *sns.Client, profile, accoun
 }
 
 // RDS Instances
-func enumerateRDSInstances(ctx context.Context, client *rds.Client, profile, accountID, region string, resourceChan chan<- Resource, writer *csv.Writer, delay time.Duration, rateMutex *sync.Mutex, bar *progressbar.ProgressBar) {
+func enumerateRDSInstances(ctx context.Context, client *rds.Client, profile, accountID, region string, resourceChan chan<- Resource, delay time.Duration, rateMutex *sync.Mutex, bar *progressbar.ProgressBar) {
 	if delay > 0 {
 		rateMutex.Lock()
 		time.Sleep(delay)
@@ -847,7 +847,7 @@ func enumerateRDSInstances(ctx context.Context, client *rds.Client, profile, acc
 // S3 Buckets (Global)
 
 // S3 Buckets (Global)
-func enumerateS3Buckets(ctx context.Context, cfg aws.Config, profile, accountID string, resourceChan chan<- Resource, bar *progressbar.ProgressBar, barMutex *sync.Mutex, writer *csv.Writer, delay time.Duration, rateMutex *sync.Mutex) {
+func enumerateS3Buckets(ctx context.Context, cfg aws.Config, profile, accountID string, resourceChan chan<- Resource, bar *progressbar.ProgressBar, barMutex *sync.Mutex, delay time.Duration, rateMutex *sync.Mutex) {
 	if bar != nil {
 		barMutex.Lock()
 		bar.Describe("Enumerating S3 buckets (global)")
@@ -905,7 +905,7 @@ func enumerateS3Buckets(ctx context.Context, cfg aws.Config, profile, accountID 
 // IAM Users (Global)
 
 // IAM Users (Global)
-func enumerateIAMUsers(ctx context.Context, cfg aws.Config, profile, accountID string, resourceChan chan<- Resource, bar *progressbar.ProgressBar, barMutex *sync.Mutex, writer *csv.Writer, delay time.Duration, rateMutex *sync.Mutex) {
+func enumerateIAMUsers(ctx context.Context, cfg aws.Config, profile, accountID string, resourceChan chan<- Resource, bar *progressbar.ProgressBar, barMutex *sync.Mutex, delay time.Duration, rateMutex *sync.Mutex) {
 	if bar != nil {
 		barMutex.Lock()
 		bar.Describe("Enumerating IAM users (global)")
@@ -961,20 +961,20 @@ func enumerateIAMUsers(ctx context.Context, cfg aws.Config, profile, accountID s
 }
 
 // Global Resources (S3, IAM)
-func enumerateGlobalResources(ctx context.Context, cfg aws.Config, profile, accountID string, resourceChan chan<- Resource, bar *progressbar.ProgressBar, barMutex *sync.Mutex, servicesToCheck map[string]bool, writer *csv.Writer, delay time.Duration, rateMutex *sync.Mutex) {
+func enumerateGlobalResources(ctx context.Context, cfg aws.Config, profile, accountID string, resourceChan chan<- Resource, bar *progressbar.ProgressBar, barMutex *sync.Mutex, servicesToCheck map[string]bool, delay time.Duration, rateMutex *sync.Mutex) {
 	var wg sync.WaitGroup
 	if servicesToCheck["S3"] {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			enumerateS3Buckets(ctx, cfg, profile, accountID, resourceChan, bar, barMutex, writer, delay, rateMutex)
+			enumerateS3Buckets(ctx, cfg, profile, accountID, resourceChan, bar, barMutex, delay, rateMutex)
 		}()
 	}
 	if servicesToCheck["IAM"] {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			enumerateIAMUsers(ctx, cfg, profile, accountID, resourceChan, bar, barMutex, writer, delay, rateMutex)
+			enumerateIAMUsers(ctx, cfg, profile, accountID, resourceChan, bar, barMutex, delay, rateMutex)
 		}()
 	}
 	wg.Wait()
@@ -994,4 +994,80 @@ func printError(bar *progressbar.ProgressBar, format string, a ...interface{}) {
 	if bar != nil {
 		bar.RenderBlank()
 	}
+}
+
+// Helper to format ALB Actions
+func formatALBActions(actions []elbv2types.Action) string {
+	var parts []string
+	for _, a := range actions {
+		details := ""
+		if a.TargetGroupArn != nil {
+			details = fmt.Sprintf("Target=%s", aws.ToString(a.TargetGroupArn))
+		} else if a.RedirectConfig != nil {
+			details = fmt.Sprintf("Redirect(Host=%s,Path=%s,Port=%s,Protocol=%s,Query=%s,StatusCode=%s)",
+				aws.ToString(a.RedirectConfig.Host),
+				aws.ToString(a.RedirectConfig.Path),
+				aws.ToString(a.RedirectConfig.Port),
+				aws.ToString(a.RedirectConfig.Protocol),
+				aws.ToString(a.RedirectConfig.Query),
+				string(a.RedirectConfig.StatusCode))
+		} else if a.FixedResponseConfig != nil {
+			details = fmt.Sprintf("FixedResponse(ContentType=%s,MessageBody=%s,StatusCode=%s)",
+				aws.ToString(a.FixedResponseConfig.ContentType),
+				aws.ToString(a.FixedResponseConfig.MessageBody),
+				aws.ToString(a.FixedResponseConfig.StatusCode))
+		} else if a.ForwardConfig != nil {
+			var tgs []string
+			for _, tg := range a.ForwardConfig.TargetGroups {
+				tgs = append(tgs, fmt.Sprintf("%s:%d", aws.ToString(tg.TargetGroupArn), aws.ToInt32(tg.Weight)))
+			}
+			details = fmt.Sprintf("Forward(TargetGroups=[%s])", strings.Join(tgs, ", "))
+		} else if a.AuthenticateOidcConfig != nil {
+			details = fmt.Sprintf("AuthenticateOidc(Issuer=%s,AuthorizationEndpoint=%s)", aws.ToString(a.AuthenticateOidcConfig.Issuer), aws.ToString(a.AuthenticateOidcConfig.AuthorizationEndpoint))
+		} else if a.AuthenticateCognitoConfig != nil {
+			details = fmt.Sprintf("AuthenticateCognito(UserPoolArn=%s,UserPoolClientId=%s)", aws.ToString(a.AuthenticateCognitoConfig.UserPoolArn), aws.ToString(a.AuthenticateCognitoConfig.UserPoolClientId))
+		}
+
+		parts = append(parts, fmt.Sprintf("%s[%s]", a.Type, details))
+	}
+	if len(parts) == 0 {
+		return "[]"
+	}
+	return fmt.Sprintf("[%s]", strings.Join(parts, ", "))
+}
+
+// Helper to format ALB Conditions
+func formatALBConditions(conditions []elbv2types.RuleCondition) string {
+	var parts []string
+	for _, c := range conditions {
+		if c.Field != nil {
+			parts = append(parts, fmt.Sprintf("%s=%v", aws.ToString(c.Field), c.Values))
+		}
+		if c.HostHeaderConfig != nil {
+			parts = append(parts, fmt.Sprintf("HostHeader=%v", c.HostHeaderConfig.Values))
+		}
+		if c.PathPatternConfig != nil {
+			parts = append(parts, fmt.Sprintf("PathPattern=%v", c.PathPatternConfig.Values))
+		}
+		if c.HttpHeaderConfig != nil {
+			parts = append(parts, fmt.Sprintf("HttpHeader(%s)=%v", aws.ToString(c.HttpHeaderConfig.HttpHeaderName), c.HttpHeaderConfig.Values))
+		}
+		if c.QueryStringConfig != nil {
+			var qs []string
+			for _, pair := range c.QueryStringConfig.Values {
+				qs = append(qs, fmt.Sprintf("%s=%s", aws.ToString(pair.Key), aws.ToString(pair.Value)))
+			}
+			parts = append(parts, fmt.Sprintf("QueryString=[%s]", strings.Join(qs, ", ")))
+		}
+		if c.HttpRequestMethodConfig != nil {
+			parts = append(parts, fmt.Sprintf("Method=%v", c.HttpRequestMethodConfig.Values))
+		}
+		if c.SourceIpConfig != nil {
+			parts = append(parts, fmt.Sprintf("SourceIp=%v", c.SourceIpConfig.Values))
+		}
+	}
+	if len(parts) == 0 {
+		return "[]"
+	}
+	return fmt.Sprintf("[%s]", strings.Join(parts, ", "))
 }
